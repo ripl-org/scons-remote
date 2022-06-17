@@ -42,6 +42,55 @@ def make_dir(connection: Connection, path: str) -> None:
     connection.run(f"mkdir {path}")
     return None
 
+class ActionRemote:
+    """
+    This class implements a corollary to :py:class:`~SCons.Action.Action`
+    """
+    def __init__(self, cmd: str, cmd_args: list, connection: Connection):
+        def action_remote(target, source, env):
+            """
+            Generates an SCons action based on a specified command.
+            
+            :param str cmd: Command-line command to execute.
+            :param list cmd_args: Command-line arguments to pass to cmd.
+            :param Connection connection: SSH connection object.
+            """
+            # Get local source and target filepaths
+            targets = [str(t).replace("\\", "/") for t in target]
+            sources = [str(s).replace("\\", "/") for s in source]
+            # Create corollary remote source and target filepaths
+            remote_targets = ['scons-compute/' + t for t in targets]
+            remote_sources = ['scons-compute/' + s for s in sources]
+            make_dir(connection, "scons-compute")
+            # Collect all remote directories that need to be created
+            remote_dirs = list(set(
+                [
+                    os.path.dirname(path) for 
+                    path in remote_targets + remote_sources
+                ]
+            ))
+            try:
+                remote_dirs.remove('scons-compute')
+            except ValueError:
+                pass
+            # Create these remote directories
+            if remote_dirs:
+                for directory in remote_dirs:
+                    make_dir(connection, directory)
+            # Upload all necessary source and target files
+            for local_path, remote_path in zip(sources, remote_sources):
+                connection.put(local=local_path, remote=remote_path)
+            command = f'{cmd} {cmd_args} {" ".join(remote_sources)} {" ".join(remote_targets)}'
+            # Execute remote command
+            connection.run(command, hide=True)
+            # Download created target(s)
+            for remote_path, local_path in zip(remote_targets, targets):
+                connection.get(remote=remote_path, local=local_path)
+            # Clean up after self
+            connection.run("rm scons-compute -r")
+            return None
+        self.action_remote = action_remote
+
 class EnvironmentRemote(Environment):
     """
     This sub-class extends the base SCons Environment class to evaluate objects
@@ -64,9 +113,9 @@ class EnvironmentRemote(Environment):
     
     def ActionRemote(self, cmd: str, cmd_args: list = list()):
         """
-        A function factory that generates an action function.
+        A class factory that generates an :py:class:`~ActionRemote` class.
         
-        The generated action function will be passed to the `action` argument of
+        The generated action class will be passed to the `action` argument of
         :py:meth:`~SCons.Environment.Environment.Command`. The resulting function 
         will follow the SCons convention of a function with three arguments; 
         `target`, `source`, and `env`.
@@ -76,43 +125,24 @@ class EnvironmentRemote(Environment):
             element is a single flag or key/value pair.
         """
         cmd_args = ' '.join(list(cmd_args))
-        def action_remote(target, source, env):
-            """Generates an SCons action based on a specified command."""
-            # Get local source and target filepaths
-            targets = [str(t) for t in target]
-            sources = [str(s) for s in source]
-            # Create corollary remote source and target filepaths
-            remote_targets = ['scons-compute/' + t for t in targets]
-            remote_sources = ['scons-compute/' + s for s in sources]
-            make_dir(self.connection, "scons-compute")
-            # Collect all remote directories that need to be created
-            remote_dirs = list(set(
-                [
-                    os.path.dirname(path) for 
-                    path in remote_targets + remote_sources
-                ]
-            ))
-            try:
-                remote_dirs.remove('scons-compute')
-            except ValueError:
-                pass
-            # Create these remote directories
-            if remote_dirs:
-                for directory in remote_dirs:
-                    make_dir(self.connection, directory)
-            # Upload all necessary source and target files
-            for local_path, remote_path in zip(sources, remote_sources):
-                self.connection.put(local=local_path, remote=remote_path)
-            command = f'{cmd} {cmd_args} {" ".join(remote_sources)} {" ".join(remote_targets)}'
-            # Execute remote command
-            self.connection.run(command, hide=True)
-            # Download created target(s)
-            for remote_path, local_path in zip(remote_targets, targets):
-                self.connection.get(remote=remote_path, local=local_path)
-            # Clean up after self
-            self.connection.run("rm scons-compute -r")
-            return None
-        return action_remote
+        return ActionRemote(cmd, cmd_args, self.connection)
+    
+    def CommandRemote(self, target: str, source: str, action: ActionRemote, **kw):
+        """
+        Passes a custom action to 
+        :py:meth:`~SCons.Environment.Environment.Command` so that the specified
+        target files are built from the source files on a remote AWS EC2 
+        instance.
+        
+        :param str target: A single target file or list of target files.
+        :param str source: A single source file or list of source files.
+        :param ActionRemote action: A :py:class:`~ActionRemote` object.
+        :param **kw: Additional key-word arguments to pass to 
+            :py:meth:`~SCons.Environment.Environment.Command`.
+        """
+        if not isinstance(action, ActionRemote):
+            raise TypeError('Argument `action` must be an object of class `ActionRemote`')
+        return self.Command(target, source, action.action_remote, **kw)
     
     connection = None
     
@@ -178,9 +208,9 @@ class EnvironmentRemote(Environment):
 if '__name__' == '__main__':
     client_args = {
         'region_name': 'us-west-2',
-        'aws_access_key_id': '',
-        'aws_secret_access_key': '',
-        'aws_session_token': ''
+        'aws_access_key_id': 'ASIAVGAC66VB2SL5KZME',
+        'aws_secret_access_key': '4Cybr4RyjtlQrItSRbudPGf6D1+wshYwtR+sTa0P',
+        'aws_session_token': 'IQoJb3JpZ2luX2VjENX//////////wEaCXVzLWVhc3QtMSJIMEYCIQC9U4zAlAJncDguVrNE5wYaBM7qTKphv6NO1aMeULxHRAIhAPqSn8DuBc1yV7rZHVcgwFBR6gm3TjKZPWZLQehlljFYKoIDCN3//////////wEQABoMMzU2NDg4NTA4NzM5IgwOg4ErKiJOFVzlHpgq1gJyeUdD5QhsySPuG0t7/7ZltG4O8UddqxEnLv3e2ovk88Ni4j6LIG2cCvnykbb3C3H24PYVavt027I2CFGwGHHG8ODpPn7Eird6SvLCO5exGJ3TJZFxYaJ947cYjz/1jjWkjtwenjDJo1gtf+h/r4l1N8WvsrFdwxCClqOhaHDWmBhkxMXGkV20MJtnxEROVPs6NL9qzQG3XcRvZRyNzGpsU1N72ZtWbIrHb5UPlDtL8VlPs9jRw8mXqEFH9ZRYr2LGj2oANO0W+Ov0U/UQs/npbw74nyp0nDpTThiM/4XNBQqsBG4lPGGSnSpA3/kVKLCHQ0Q2ao1SMDfiaX/Iq0sBCiiT8a/yYOHhusk44MGiuVMOUh677AbfWEqeNh9HiOFSybpiMRggXankid6n3RCDcRErf0A4EUbPp1t1jKmWbptmtWUCzZn1zJphztNHXMz9GCQdXR0wtL+zlQY6pQEkEgCn2ocsyOt32LItFsDekOOvMh/DK6RVykmUlguarmZhTKV9w0YA4BOHKsmlmROQoUN9mXiGTnuEcOsSW0K31/2lvi8BfSHfmIXUCzIQzBmP9WUHsEomozrAMi4H0oCV13czqRvl2GJ+MU1WVmqH1W508kooi1rNrAfkZyjB78FMRAnDMYbdzgNe1a5bzAJMG0PCHXNEV0L4YGrVKME5We8Lrrw='
     }
     
     instance_args = {
@@ -204,3 +234,18 @@ if '__name__' == '__main__':
     
     # Initialize cluster
     env.connection_open(client_args, instance_args, ssh_args)
+    
+    env.CommandRemote(
+        target='data/decoded-message.txt',
+        source=[
+            'decode.py',
+            'data/coded-message.txt'
+        ],
+        action=env.ActionRemote(cmd='python3')
+    )
+    # Create Remote Action
+    a = env.ActionRemote(cmd='python3')
+    
+    # Run analysis
+    a.action_remote(['data/decoded-message.txt'], ['decode.py', 'data/coded-message.txt'], os.environ)
+    
