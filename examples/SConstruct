@@ -1,6 +1,5 @@
 import os
 from scons_remote import EnvironmentRemote
-import time
 
 env = EnvironmentRemote(ENV=os.environ)
 
@@ -27,20 +26,21 @@ ssh_args = {
 
 env.connection_initialize(client_args, instance_args, ssh_args)
 
-env.CommandRemote(
-    target='scratch/decoded-message.txt',
-    source=[
-        'decode.py',
-        'data/coded-message.txt'
-    ],
-    action=env.ActionRemote(cmd='python3')
-)
-
-# env.Command(
-#     target="scratch/decoded-message.txt",
+# env.CommandRemote(
+#     target='scratch/decoded-message.txt',
 #     source=[
-#         "decode.py",
-#         "data/coded-message.txt"
+#         'decode.py',
+#         'data/coded-message.txt'
 #     ],
-#     action=env.ActionRemote(cmd='python3').action_remote
+#     action=env.ActionRemote(cmd='python3')
 # )
+
+env.Command(
+    target="scratch/decoded-message.txt",
+    source=[
+        "decode.py",
+        "data/coded-message.txt"
+    ],
+    #action = "python $SOURCES $TARGETS"
+    action=env.ActionRemote(cmd='python3').action_remote
+)
