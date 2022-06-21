@@ -1,13 +1,11 @@
 import os
 from scons_remote import EnvironmentRemote
+import time
 
 env = EnvironmentRemote(ENV=os.environ)
 
 client_args = {
-    'region_name': 'us-west-2',
-    'aws_access_key_id': '',
-    'aws_secret_access_key': '',
-    'aws_session_token': ''
+    'region_name': 'us-west-2'
 }
 
 instance_args = {
@@ -27,10 +25,8 @@ ssh_args = {
     }
 }
 
-print("Connection to AWS\n")
-env.connection_open(client_args, instance_args, ssh_args)
+env.connection_initialize(client_args, instance_args, ssh_args)
 
-print("Connected and trying to run command remotely\n")
 env.CommandRemote(
     target='scratch/decoded-message.txt',
     source=[
@@ -46,5 +42,5 @@ env.CommandRemote(
 #         "decode.py",
 #         "data/coded-message.txt"
 #     ],
-#     action="python $SOURCES $TARGETS"
+#     action=env.ActionRemote(cmd='python3').action_remote
 # )
