@@ -27,6 +27,8 @@ class EnvironmentRemote(Environment):
     _ec2_client_args = None
     _ec2_instance_args = None
     _ec2_req = None
+    _remote_cmd = None
+    _remote_cmd_args = None
     _ssh_args = None
     _ssh_tries = None
     
@@ -107,7 +109,9 @@ class EnvironmentRemote(Environment):
         each element is a single flag or key/value pair.
         """
         cmd_args = ' '.join(list(cmd_args))
-        return ActionRemote(cmd, cmd_args, self)
+        self._remote_cmd = cmd
+        self._remote_cmd_args = cmd_args
+        return ActionRemote()
     
     def CommandRemote(
         self,
@@ -132,7 +136,7 @@ class EnvironmentRemote(Environment):
             raise TypeError(
                 'Argument `action` must be an object of class `ActionRemote`'
             )
-        return self.Command(target, source, action.action_remote, **kw)
+        return self.Command(target, source, action.action, **kw)
     
     def connection_initialize(
         self,
