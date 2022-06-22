@@ -1,16 +1,15 @@
-# scons-remote
+# scons_remote
 The goal of `scons_remote` is to facilitate the building of SCons targets on
 remote AWS instances.
 
-# Usage
-The primary contribution of `scons_remote` is the `EnvironmentRemote` class.
-`EnvironmentRemote` is a subclass of the vanilla `SCons.Environment` class
-and adds the workhorse method `CommandRemote`. `CommandRemote` attempts to
-mimic, as closely as possible, the `SCons.Environment.Command` method.
+## Usage
+The primary contribution of `scons_remote` is the `EnvironmentRemote` class 
+which is a subclass of the vanilla `SCons.Environment` class 
+and adds the workhorse method `CommandRemote`. This method attempts to
+mimic, as closely as possible, the base `Command` method.
 
-## Base SCons Comparison
-The general formatting of a standard `SCons.Environment.Command` in an
-`SConstruct` file would look something like the following:
+The general formatting of a standard `Command` in an `SConstruct` file 
+would look something like the following:
 ```python
 import os
 
@@ -35,4 +34,25 @@ env.CommandRemote(
     source='foo_bar.py',
     action=env.ActionRemote(cmd='foobar')
 )
+```
+
+### Differences
+The primary differences between `CommandRemote` and `Command` is that
+`CommandRemote` requires that the specified action is created using
+`EnvironmentRemote.ActionRemote` whereas `Command` accepts a string or
+a callable Python object.
+
+`ActionRemote` accepts the following arguments:
+    - `cmd`: A string specifying the command to execute
+    - `cmd_args`: A string or list of strings specifying command line arguments
+    to be passed to `cmd`.
+
+For example, a legal action to pass to `Command` could be 
+```python
+    action='python3 -m $SOURCES $TARGETS'
+```
+and the same action translated for `CommandRemote` using `ActionRemote`
+would be
+```python
+    action=env.ActionRemote(cmd='python3', cmd_arg='-m')
 ```
