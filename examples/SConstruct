@@ -1,5 +1,5 @@
 import os
-from scons_remote import EnvironmentRemote
+from scons_remote.EnvironmentRemote import EnvironmentRemote
 
 env = EnvironmentRemote(ENV=os.environ)
 
