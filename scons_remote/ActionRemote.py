@@ -1,3 +1,6 @@
+import os
+from scons_remote.Utils import make_dir
+
 class ActionRemote:
     """
     This class implements a corollary to :py:class:`~SCons.Action.Action`
