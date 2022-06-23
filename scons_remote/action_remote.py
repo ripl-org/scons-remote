@@ -1,6 +1,6 @@
 import os
 from SCons.Errors import UserError
-from scons_remote.Utils import make_dir
+from scons_remote.utils import make_dir
 
 class ActionRemote:
     """

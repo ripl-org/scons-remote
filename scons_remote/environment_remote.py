@@ -1,4 +1,4 @@
-from scons_remote.ActionRemote import ActionRemote
+from scons_remote.action_remote import ActionRemote
 import boto3
 from botocore.exceptions import ClientError
 from fabric.connection import Connection
@@ -6,7 +6,7 @@ import os
 from paramiko.ssh_exception import NoValidConnectionsError
 from SCons.Environment import Environment
 import time
-from scons_remote.Utils import (
+from scons_remote.utils import (
     instance_ids,
     instance_public_ips,
     instance_running,

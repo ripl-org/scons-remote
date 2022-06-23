@@ -37,7 +37,7 @@ The following shows how a simple remote configuration might be initialized
 in the `SConstruct` script:
 ```python
 import os
-from scons_remote.EnvironmentRemote import EnvironmentRemote
+from scons_remote.environment_remote import EnvironmentRemote
 
 env = EnvironmentRemote(ENV=os.environ)
 
@@ -83,7 +83,7 @@ env.Command(
 Translating the prior chunk to build the target using **scons-remote** would be quite simple:
 ```python
 import os
-from scons_remote.EnvironmentRemote import EnvironmentRemote
+from scons_remote.environment_remote import EnvironmentRemote
 
 env=EnvironmentRemote(ENV=os.environ)
 
@@ -123,7 +123,7 @@ Combining the initialization step and the target building step described above, 
 script for building `foo.bar` would look as follows:
 ```python
 import os
-from scons_remote.EnvironmentRemote import EnvironmentRemote
+from scons_remote.environment_remote import EnvironmentRemote
 
 env = EnvironmentRemote(ENV=os.environ)
 
