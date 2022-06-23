@@ -118,6 +118,45 @@ env.CommandRemote(
 )
 ```
 
+### Full SConstruct Example
+Combining the initialization step and the target building step described above, the full `SConstruct`
+script for building `foo.bar` would look as follows:
+```python
+import os
+from scons_remote.EnvironmentRemote import EnvironmentRemote
+
+env = EnvironmentRemote(ENV=os.environ)
+
+client_args = {
+    'region_name': 'us-west-2'
+}
+
+instance_args = {
+    'ImageId': 'ami-xxxxxxxxxx',
+    'InstanceType': 't2.large',
+    'KeyName': 'xxxxxxx',
+    'MaxCount': 1,
+    'MinCount': 1,
+    'InstanceInitiatedShutdownBehavior': 'terminate'
+}
+
+ssh_args = {
+    'user': 'ubuntu',
+    'connect_kwargs': {
+        'key_filename': 'path/to/private/key.pem'
+    }
+}
+
+env.connection_initialize(client_args, instance_args, ssh_args)
+
+env.CommandRemote(
+    target='foo.bar',
+    source='foo_bar.py',
+    action=env.ActionRemote(cmd='python')
+)
+```
+And voilà, the target has been built via AWS!
+
 ## ⚠️Potential Issues⚠️
 The following is a short list of known potential issues when using scons_remote (more will probably surface):
 - *__AWS Credentials Timeout__*: If your AWS credentials that are being passed to boto3 are of the
