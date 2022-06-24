@@ -157,9 +157,32 @@ env.CommandRemote(
 ```
 And voilà, the target has been built via AWS!
 
-## ⚠️Potential Issues⚠️
-The following is a short list of known potential issues when using scons_remote (more will probably surface):
+### Force Targets to be Built Locally
+In some cases it may be convenient to create an `SConstruct` file that invokes `CommandRemote` but still have
+the ability to force all targets to be built locally. To accomodate this, **scons-remote** respects the
+`SCONS_REMOTE_MODE` environment variable set to *'local'*. If this variable is unset or any other value,
+**scons-remote** will simply ignore it.
+
+To set this in Linux enter the following:
+```shell
+export SCONS_REMOTE_MODE=local
+```
+And in PowerShell:
+```ps1
+$env:SCONS_REMOTE_MODE="local"
+```
+
+## ⚠️Known Issues/Shortcomings⚠️
+The following is a short list of known issues/shortcomings when using **scons-remote** (more will probably surface):
 - *__AWS Credentials Timeout__*: If your AWS credentials that are being passed to boto3 are of the
 expiring-after-one-hour variety, long-running pipelines (greater than one hour) will lose the ability to manage
 AWS resources and will error out if any targets are attempted to be built after that point. However, any targets
 that are already building should continue their build successfully.
+- *__Forcing Targets to Build Locally__*: Say you have forced all targets to be built locally (as described above).
+When you unset the `SCONS_REMOTE_MODE` environment variable, SCons will not recognize the targets as already
+built and will re-build them remotely. This is because, under the hood, **scons-remote** is using two different
+builder actions which SCons recognizes and instructs that the targets be re-built. The converse action (switching
+from remote to local) will have the same behavior.
+- *__Matching Local and Remote Compute Environments__*: Currently **scons-remote** does no checking of the remote
+compute environment to ensure that it has the necessary dependencies/tools required to successfully build the targets.
+This falls entirely on the user to ensure that their AMI is compatible with their use-case.

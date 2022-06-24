@@ -6,9 +6,15 @@ class ActionRemote:
     """
     This class is mostly so that :py:class:`EnvironmentRemote` can do some type
     checking when it receives an action.
+    
+    :param str cmd: The command to execute via command line.
+    :param list cmd_args: A list specifying command line arguments where 
+        each element is a single flag or key/value pair.
     """
-    def __init__(self):
+    def __init__(self, cmd: str, cmd_args: list):
         self.action = action_remote
+        self.cmd = cmd
+        self.cmd_args = cmd_args
 
 def action_remote(target, source, env) -> None:
     """
@@ -69,6 +75,9 @@ def action_remote(target, source, env) -> None:
         env._connection.run("rm scons-compute -r")
         return None
     finally:
+        env._ec2_client_args = env._default_ec2_client_args
+        env._ec2_instance_args = env._default_ec2_instance_args
+        env._ssh_args = env._default_ssh_args
         env._remote_cmd = None
         env._remote_cmd_args = None
         env._connection_close()

@@ -8,7 +8,7 @@ client_args = {
 }
 
 instance_args = {
-    'ImageId': 'ami-0ac0338ac8010df03',
+    'ImageId': 'ami-0b115af16626d90cb',
     'InstanceType': 't2.large',
     'KeyName': 'sandbox',
     'MaxCount': 1,

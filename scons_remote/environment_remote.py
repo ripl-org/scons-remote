@@ -1,3 +1,4 @@
+from scons_remote import FORCE_LOCAL_EVAL
 from scons_remote.action_remote import ActionRemote
 import boto3
 from botocore.exceptions import ClientError
@@ -5,6 +6,7 @@ from fabric.connection import Connection
 import os
 from paramiko.ssh_exception import NoValidConnectionsError
 from SCons.Environment import Environment
+from SCons.Errors import UserError
 import time
 from scons_remote.utils import (
     instance_ids,
@@ -23,6 +25,10 @@ class EnvironmentRemote(Environment):
     ### Private Methods/Attributes ############################
     
     _connection = None
+    _default_ec2_client_args = None
+    _default_ec2_instance_args = None
+    _default_ssh_args = None
+    _default_ssh_tries = None
     _ec2_client = None
     _ec2_client_args = None
     _ec2_instance_args = None
@@ -106,18 +112,21 @@ class EnvironmentRemote(Environment):
         
         :param str cmd: The command to execute via command line.
         :param list cmd_args: A list specifying command line arguments where 
-        each element is a single flag or key/value pair.
+            each element is a single flag or key/value pair.
         """
         cmd_args = ' '.join(list(cmd_args))
         self._remote_cmd = cmd
         self._remote_cmd_args = cmd_args
-        return ActionRemote()
+        return ActionRemote(cmd, cmd_args)
     
     def CommandRemote(
         self,
         target: str,
         source: str,
         action: ActionRemote,
+        client_args: dict = None,
+        instance_args: dict = None,
+        ssh_args: dict = None,
         **kw
     ):
         """
@@ -129,14 +138,42 @@ class EnvironmentRemote(Environment):
         :param str target: A single target file or list of target files.
         :param str source: A single source file or list of source files.
         :param ActionRemote action: A :py:class:`~ActionRemote` object.
+        :param dict client_args: (Optional) Client args passed directly to 
+            :py:meth:`~boto3.session.Session.client`.
+        :param dict instance_args: (Optional) Instance configuration args passed
+            directly to :py:meth:`~botocore.client.EC2.run_instances`.
+        :param dict ssh_args: (Optional) SSH connection arguments that are 
+            passed verbatim to :py:class:`~fabric.connection.Connection`.
         :param **kw: Additional key-word arguments to pass to 
             :py:meth:`~SCons.Environment.Environment.Command`.
         """
+        ca = self._ec2_client_args
+        ia = self._ec2_instance_args
+        sa = self._ssh_args
+        if FORCE_LOCAL_EVAL:
+            return self.Command(
+                target,
+                source,
+                f'{action.cmd} {action.cmd_args} $SOURCES $TARGETS',
+                **kw
+            )
+        if any([x is None for x in [ca, ia, sa]]):
+            raise UserError(
+                'Connection configuration is missing. Did you '
+                'forget to call `EnvironmentRemote.connection_initialize`?'
+            )
         if not isinstance(action, ActionRemote):
             raise TypeError(
                 'Argument `action` must be an object of class `ActionRemote`'
             )
+        if not client_args is None:
+            self._ec2_client_args = client_args
+        if not instance_args is None:
+            self._ec2_instance_args = instance_args
+        if not ssh_args is None:
+            self._ssh_args = ssh_args
         return self.Command(target, source, action.action, **kw)
+            
     
     def connection_initialize(
         self,
@@ -157,8 +194,12 @@ class EnvironmentRemote(Environment):
         :param int ssh_retries: An integer specifying the number of SSH attempts
             to make before aborting.
         """
+        self._default_ec2_client_args = client_args
         self._ec2_client_args = client_args
+        self._default_ec2_instance_args = instance_args
         self._ec2_instance_args = instance_args
+        self._default_ssh_args = ssh_args
         self._ssh_args = ssh_args
+        self._default_ssh_tries = ssh_retries
         self._ssh_tries = ssh_retries
         return None
