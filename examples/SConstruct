@@ -34,3 +34,13 @@ env.CommandRemote(
     ],
     action=env.ActionRemote(cmd='python3')
 )
+
+for i in range(1, 8):
+    env.CommandRemote(
+        target=f'scratch/decoded-message{i}.txt',
+        source=[
+           "decode.py",
+           "data/coded-message.txt"
+        ],
+        action=env.ActionRemote(cmd='python3')
+    )

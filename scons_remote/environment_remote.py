@@ -115,8 +115,6 @@ class EnvironmentRemote(Environment):
             each element is a single flag or key/value pair.
         """
         cmd_args = ' '.join(list(cmd_args))
-        self._remote_cmd = cmd
-        self._remote_cmd_args = cmd_args
         return ActionRemote(cmd, cmd_args)
     
     def CommandRemote(
@@ -147,11 +145,12 @@ class EnvironmentRemote(Environment):
         :param **kw: Additional key-word arguments to pass to 
             :py:meth:`~SCons.Environment.Environment.Command`.
         """
-        ca = self._ec2_client_args
-        ia = self._ec2_instance_args
-        sa = self._ssh_args
+        env_clone = self.Clone()
+        ca = env_clone._ec2_client_args
+        ia = env_clone._ec2_instance_args
+        sa = env_clone._ssh_args
         if FORCE_LOCAL_EVAL:
-            return self.Command(
+            return env_clone.Command(
                 target,
                 source,
                 f'{action.cmd} {action.cmd_args} $SOURCES $TARGETS',
@@ -167,12 +166,14 @@ class EnvironmentRemote(Environment):
                 'Argument `action` must be an object of class `ActionRemote`'
             )
         if not client_args is None:
-            self._ec2_client_args = client_args
+            env_clone._ec2_client_args = client_args
         if not instance_args is None:
-            self._ec2_instance_args = instance_args
+            env_clone._ec2_instance_args = instance_args
         if not ssh_args is None:
-            self._ssh_args = ssh_args
-        return self.Command(target, source, action.action, **kw)
+            env_clone._ssh_args = ssh_args
+        env_clone._remote_cmd = action.cmd
+        env_clone._remote_cmd_args = action.cmd_args
+        return env_clone.Command(target, source, action.action, **kw)
             
     
     def connection_initialize(

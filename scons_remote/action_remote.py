@@ -78,8 +78,6 @@ def action_remote(target, source, env) -> None:
         env._ec2_client_args = env._default_ec2_client_args
         env._ec2_instance_args = env._default_ec2_instance_args
         env._ssh_args = env._default_ssh_args
-        env._remote_cmd = None
-        env._remote_cmd_args = None
         env._connection_close()
 
 def check_env(env) -> None:
