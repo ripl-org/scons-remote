@@ -20,7 +20,7 @@ instance_args = {
 ssh_args = {
     'user': 'ubuntu',
     'connect_kwargs': {
-        'key_filename': 'C:/Users/DanielMolitor/Documents/ripl/auth/sandbox.pem'
+        'key_filename': 'path/to/sandbox.pem'
     }
 }
 
