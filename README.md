@@ -5,7 +5,6 @@ base SCons classes, it achieves this goal while maintaining the robustness/flexi
 standard SCons builds.
 
 ## Installation
-❗ Not actually uploaded to PyPI yet ❗
 ```
 pip install scons-remote
 ```
