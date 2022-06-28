@@ -1,5 +1,6 @@
 import os
 from SCons.Errors import UserError
+from SCons.Node.Python import Value
 from scons_remote.utils import make_dir
 
 class ActionRemote:
@@ -37,12 +38,18 @@ def action_remote(target, source, env) -> None:
             "SSH failed to connect"
         )
         # Get local source and target filepaths
+        source_is_value = [isinstance(s, Value) for s in source]
         targets = [str(t).replace("\\", "/") for t in target]
         sources = [str(s).replace("\\", "/") for s in source]
         # Create corollary remote source and target filepaths
         remote_targets = ['scons-compute/' + t for t in targets]
-        remote_sources = ['scons-compute/' + s for s in sources]
-        make_dir(env._connection, "scons-compute")
+        remote_sources = []
+        for s, sv in zip(sources, source_is_value):
+            if sv:
+                remote_sources.append(s)
+            else:
+                remote_sources.append('scons-compute/' + s)
+        make_dir(env._connection, 'scons-compute')
         # Collect all remote directories that need to be created
         remote_dirs = list(set(
             [
@@ -50,17 +57,21 @@ def action_remote(target, source, env) -> None:
                 path in remote_targets + remote_sources
             ]
         ))
-        try:
-            remote_dirs.remove('scons-compute')
-        except ValueError:
-            pass
+        for val in ['scons-compute', '']:
+            try:
+                remote_dirs.remove(val)
+            except ValueError:
+                pass
         # Create these remote directories
         if remote_dirs:
             for directory in remote_dirs:
                 make_dir(env._connection, directory)
         # Upload all necessary source and target files
-        for local_fp, remote_fp in zip(sources, remote_sources):
-            env._connection.put(local=local_fp, remote=remote_fp)
+        for local_fp, remote_fp, is_value in zip(sources, remote_sources, source_is_value):
+            if not is_value:
+                env._connection.put(local=local_fp, remote=remote_fp)
+            else:
+                pass
         command = (
             f'{env._remote_cmd} {env._remote_cmd_args} '
             f'{" ".join(remote_sources)} '
