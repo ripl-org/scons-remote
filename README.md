@@ -185,3 +185,10 @@ from remote to local) will have the same behavior.
 - *__Matching Local and Remote Compute Environments__*: Currently **scons-remote** does no checking of the remote
 compute environment to ensure that it has the necessary dependencies/tools required to successfully build the targets.
 This falls entirely on the user to ensure that their AMI is compatible with their use-case.
+
+## Contributors
+- Daniel Molitor
+- Mark Howison
+
+## License
+**scons-remote** is freely available for non-commercial use under the license provided in LICENSE. To inquiry about commercial use, please contact connect@ripl.org.
