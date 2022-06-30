@@ -1,9 +1,12 @@
 # for projects that use SCons for building: http://http://www.scons.org/
-.sconsign.dblite
+examples/.sconsign.dblite
+examples/scratch
 
 # When configure fails, SCons outputs these
 config.log
 .sconf_temp
 
+# Build objects
 __pycache__
-scratch
+dist
+*.egg-info
