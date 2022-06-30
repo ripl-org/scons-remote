@@ -191,4 +191,4 @@ This falls entirely on the user to ensure that their AMI is compatible with thei
 - Mark Howison
 
 ## License
-**scons-remote** is freely available for non-commercial use under the license provided in LICENSE. To inquiry about commercial use, please contact connect@ripl.org.
+**scons-remote** is freely available for non-commercial use under the license provided in LICENSE. To inquire about commercial use, please contact connect@ripl.org.
